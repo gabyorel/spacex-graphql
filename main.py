@@ -1,46 +1,31 @@
 import os
+import json
 import asyncio
 
-from aiohttp import BasicAuth
-from gql import Client, gql
-from gql.transport.aiohttp import AIOHTTPTransport
+from grphql.client import GraphQLClient
 
 async def main():
 
     url = os.getenv("GRAPHQL_URL")
     key = os.getenv("GRAPHQL_API_KEY")
 
-    transport = AIOHTTPTransport(
+    client = GraphQLClient(
         url = url,
-        auth = BasicAuth("ApiKey", key)
+        auth_type = 'basic',
+        username = 'ApiKey',
+        password = key,
+        headers = {
+            "x-cache-control": "no-cache"
+        }
     )
 
-    async with Client(
-        transport = transport,
-        fetch_schema_from_transport = True
-    ) as session:
-        
-        query = gql(
-            """
-            query GetCompanyInfo {
-              company {
-                founder
-                founded
-                launch_sites
-                headquarters {
-                  address
-                  city
-                  state
-                }
-                name
-                valuation
-                vehicles
-              }
-            }
-        """
-        )
+    result = await client.get_company_info()
 
-        result = await session.execute(query)
-        print(result)
+    print(
+        json.dumps(
+            result,
+            indent=2
+        )
+    )
 
 asyncio.run(main())
